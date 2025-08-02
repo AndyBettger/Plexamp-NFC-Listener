@@ -39,6 +39,7 @@ pip install adafruit-circuitpython-pn532 requests RPi.GPIO adafruit-blinka
 ```
 
 ### 5. Install Plexamp Headless
+Use the installer provided by tgp-2, more details are available [here](https://gist.github.com/tgp-2/fc34c5389bc3e4ef332e28d9430b0ebf), but wgetting the installer and running it, should work.
 ```bash
 wget https://gist.githubusercontent.com/tgp-2/65e6f2f637bc81df2c9fd9ba33f73bc6/raw/79dfa75db81be185bcc84faa54b38604b185a619/plexamp-install.sh
 bash ./plexamp-install.sh
