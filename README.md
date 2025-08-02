@@ -1,6 +1,16 @@
 # Plexamp NFC Listener
 
-This project turns your Raspberry Pi and PN532 NFC reader into a physical controller for Plexamp headless.
+A lightweight Python script for Raspberry Pi that reads NFC tags via a Waveshare PN532 HAT and triggers playback on Plexamp headless. 
+Each NFC tag contains a pre-encoded Plexamp playback URL which is resolved and sent to the local Plexamp instance.
+
+- Designed for Raspberry Pi 4 with Raspberry Pi OS
+- Uses Adafruit's CircuitPython PN532 and Blinka libraries
+- Compatible with Plexamp headless running on `http://localhost:32500`
+- Full startup automation with systemd and Chromium kiosk mode
+
+## Use Case
+
+Perfect for kiosks, jukeboxes, man caves, or DIY smart audio stations. Tap an NFC tag to instantly queue and play an album in Plexamp!
 
 ## 🧰 What You Need
 - Raspberry Pi - Any model with GPIO and Internet access, I would suggest that a Raspberry Pi 4 Model B or faster is used if you are planning on using Plexamp to scroll through and browse your artist and album collections, it does work but it can be quite slow to scroll and respond, the Now Playing and NFC playback feature are fine, but there is sometimes a delay of a few seconds
