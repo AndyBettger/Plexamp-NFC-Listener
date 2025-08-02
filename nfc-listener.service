@@ -1,0 +1,13 @@
+[Unit]
+Description=Plexamp NFC Listener
+After=network.target
+
+[Service]
+ExecStart=/home/andy/Plex-NFC-Listener/venv/bin/python /home/andy/Plex-NFC-Listener/nfc_listener.py
+WorkingDirectory=/home/andy/Plex-NFC-Listener
+Restart=always
+User=andy
+Group=andy
+
+[Install]
+WantedBy=multi-user.target
