@@ -43,11 +43,13 @@ pip install adafruit-circuitpython-pn532 requests RPi.GPIO adafruit-blinka
 wget https://gist.githubusercontent.com/tgp-2/65e6f2f637bc81df2c9fd9ba33f73bc6/raw/79dfa75db81be185bcc84faa54b38604b185a619/plexamp-install.sh
 bash ./plexamp-install.sh
 ```
+- Enter the plex.tv claim code ... copy from a web browser, paste it `ctrl-V` into your Pi SSH session and enter
+- Enter a name for your player
+- After install completes, `sudo reboot` to restart the Pi ... Plexamp auto-starts after reboot
+- In a web browser, go to `hostname:32500`, login to Plex, and configure playback settings for your Pi
+- From the browser or from the Plexamp app on another device (your phone, laptop, etc.), tap the Cast icon and select your Pi from the list of players 
+- Now play some music!
 
-Login using the terminal prompt after launching once:
-```bash
-plexamp-headless
-```
 
 ### 6. Autostart Plexamp UI (Kiosk Mode)
 ```bash
