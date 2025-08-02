@@ -117,3 +117,7 @@ systemctl status nfc-listener.service
 
 ## ✨ Done!
 Scan an NFC tag written with a Plexamp sharing link and enjoy physical control of your music.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
