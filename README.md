@@ -30,7 +30,7 @@ sudo reboot
 ### 4. Set Up Python Virtual Environment
 ```bash
 cd ~
-git clone https://github.com/YOURUSERNAME/Plex-NFC-Listener.git
+git clone https://github.com/AndyBettger/Plexamp-NFC-Listener.git
 cd Plex-NFC-Listener
 python3 -m venv venv
 source venv/bin/activate
