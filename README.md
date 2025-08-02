@@ -3,31 +3,37 @@
 This project turns your Raspberry Pi and PN532 NFC reader into a physical controller for Plexamp headless.
 
 ## 🧰 What You Need
-- Raspberry Pi (any model with GPIO and Internet access)
-- PN532 NFC HAT (I2C mode)
+- Raspberry Pi - Any model with GPIO and Internet access, I would suggest that a Raspberry Pi 4 Model B or faster is used if you are planning on using Plexamp to scroll through and browse your artist and album collections, it does work but it can be quite slow to scroll and respond, the Now Playing and NFC playback feature are fine, but there is sometimes a delay of a few seconds
+- PN532 NFC HAT - In I2C mode - The one that is tested and working is (https://www.waveshare.com/wiki/PN532_NFC_HAT) available from here (https://thepihut.com/products/nfc-hat-for-raspberry-pi-pn532)
 - Chromium browser (preinstalled on Raspberry Pi OS)
-- A Plex Pass account so you can use Plexamp Headless and player
+- A Plex Pass account so you can use Plexamp Headless
 
 ## 📦 Installation (Step-by-step)
 
-### 1. Update System
+### 1. Hardware Setup
+- Prepare the SD card with a fresh install of Raspberry Pi OS using the instructions [here](https://www.raspberrypi.com/documentation/computers/getting-started.html#raspberry-pi-imager) choosing the correct Pi version you have and the 64-bit version of Raspberry Pi OS
+- Configure the DIP switches on the NFC hat to work in I2C mode with the instructions [here](https://www.waveshare.com/wiki/PN532_NFC_HAT).
+- Once the SD card is prepared and the NFC hat is set to I2C mode and seated on the Pi as per the instructions, insert the SD card into the Pi and power on.
+
+
+### 2. Update System
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
-### 2. Install Required Packages
+### 3. Install Required Packages
 ```bash
 sudo apt install -y python3 python3-pip python3-venv chromium-browser git i2c-tools
 ```
 
-### 3. Enable I2C on the Pi
+### 4. Enable I2C on the Pi
 ```bash
 sudo raspi-config
 # Navigate to: Interfacing Options > I2C > Enable
 sudo reboot
 ```
 
-### 4. Set Up Python Virtual Environment
+### 5. Set Up Python Virtual Environment
 ```bash
 cd ~
 git clone https://github.com/AndyBettger/Plexamp-NFC-Listener.git
@@ -38,7 +44,7 @@ pip install --upgrade pip
 pip install adafruit-circuitpython-pn532 requests RPi.GPIO adafruit-blinka
 ```
 
-### 5. Install Plexamp Headless
+### 6. Install Plexamp Headless
 Use the installer provided by tgp-2, more details are available [here](https://gist.github.com/tgp-2/fc34c5389bc3e4ef332e28d9430b0ebf), but wgetting the installer and running it, should work.
 ```bash
 wget https://gist.githubusercontent.com/tgp-2/65e6f2f637bc81df2c9fd9ba33f73bc6/raw/79dfa75db81be185bcc84faa54b38604b185a619/plexamp-install.sh
@@ -52,7 +58,7 @@ bash ./plexamp-install.sh
 - Now play some music!
 
 
-### 6. Autostart Plexamp UI (Kiosk Mode)
+### 7. Autostart Plexamp UI (Kiosk Mode)
 ```bash
 mkdir -p ~/.config/autostart
 nano ~/.config/autostart/kiosk.desktop
@@ -66,7 +72,7 @@ Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost
 X-GNOME-Autostart-enabled=true
 ```
 
-### 7. Set Up Service to Run at Boot
+### 8. Set Up Service to Run at Boot
 ```bash
 sudo cp nfc-listener.service /etc/systemd/system/nfc-listener.service
 sudo systemctl daemon-reexec
