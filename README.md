@@ -14,7 +14,7 @@ Perfect for kiosks, jukeboxes, man caves, or DIY smart audio stations. Tap an NF
 
 ## 🧰 What You Need
 - Raspberry Pi - Any model with GPIO and Internet access, I would suggest that a Raspberry Pi 4 Model B or faster is used if you are planning on using Plexamp to scroll through and browse your artist and album collections, it does work but it can be quite slow to scroll and respond, the Now Playing and NFC playback feature are fine, but there is sometimes a delay of a few seconds
-- PN532 NFC HAT - In I2C mode - The one that is tested and working is (https://www.waveshare.com/wiki/PN532_NFC_HAT) available from here (https://thepihut.com/products/nfc-hat-for-raspberry-pi-pn532)
+- PN532 NFC HAT - In I2C mode - The one that is tested and working is available from [here](https://thepihut.com/products/nfc-hat-for-raspberry-pi-pn532) and documentation is [here](https://www.waveshare.com/wiki/PN532_NFC_HAT)
 - Chromium browser (preinstalled on Raspberry Pi OS)
 - A Plex Pass account so you can use Plexamp Headless
 
