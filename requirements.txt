@@ -1,2 +1,4 @@
 adafruit-circuitpython-pn532
+adafruit-blinka
+RPi.GPIO
 requests
