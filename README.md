@@ -15,25 +15,35 @@ This project turns your Raspberry Pi and PN532 NFC reader into a physical contro
 - Configure the DIP switches on the NFC hat to work in I2C mode with the instructions [here](https://www.waveshare.com/wiki/PN532_NFC_HAT).
 - Once the SD card is prepared and the NFC hat is set to I2C mode and seated on the Pi as per the instructions, insert the SD card into the Pi and power on.
 
+### 2. Enable SSH and I2C on the Pi
+I would suggest doing most of this from an SSH session, so if you did not enable SSH from within the Raspberry Pi Imager do the following from a terminal:
+```bash
+sudo raspi-config
+# Navigate to: Interfacing Options > SSH > Enable
+# Navigate to: Interfacing Options > I2C > Enable
+sudo reboot
+```
+Once it has rebooted, login to the Pi via SSH
 
-### 2. Update System
+### 3. Update System
+Update all installed software to begin
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
-### 3. Install Required Packages
+### 4. Install Required Packages
 ```bash
 sudo apt install -y python3 python3-pip python3-venv chromium-browser git i2c-tools
 ```
 
-### 4. Enable I2C on the Pi
+### 5. Enable I2C on the Pi
 ```bash
 sudo raspi-config
 # Navigate to: Interfacing Options > I2C > Enable
 sudo reboot
 ```
 
-### 5. Set Up Python Virtual Environment
+### 6. Set Up Python Virtual Environment
 ```bash
 cd ~
 git clone https://github.com/AndyBettger/Plexamp-NFC-Listener.git
@@ -44,7 +54,7 @@ pip install --upgrade pip
 pip install adafruit-circuitpython-pn532 requests RPi.GPIO adafruit-blinka
 ```
 
-### 6. Install Plexamp Headless
+### 7. Install Plexamp Headless
 Use the installer provided by tgp-2, more details are available [here](https://gist.github.com/tgp-2/fc34c5389bc3e4ef332e28d9430b0ebf), but wgetting the installer and running it, should work.
 ```bash
 wget https://gist.githubusercontent.com/tgp-2/65e6f2f637bc81df2c9fd9ba33f73bc6/raw/79dfa75db81be185bcc84faa54b38604b185a619/plexamp-install.sh
@@ -58,7 +68,7 @@ bash ./plexamp-install.sh
 - Now play some music!
 
 
-### 7. Autostart Plexamp UI (Kiosk Mode)
+### 8. Autostart Plexamp UI (Kiosk Mode)
 ```bash
 mkdir -p ~/.config/autostart
 nano ~/.config/autostart/kiosk.desktop
@@ -72,7 +82,7 @@ Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost
 X-GNOME-Autostart-enabled=true
 ```
 
-### 8. Set Up Service to Run at Boot
+### 9. Set Up Service to Run at Boot
 ```bash
 sudo cp nfc-listener.service /etc/systemd/system/nfc-listener.service
 sudo systemctl daemon-reexec
