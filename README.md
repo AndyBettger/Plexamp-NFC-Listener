@@ -12,11 +12,20 @@ Each NFC tag contains a pre-encoded Plexamp playback URL which is resolved and s
 
 Perfect for kiosks, jukeboxes, man caves, or DIY smart audio stations. Tap an NFC tag to instantly queue and play an album in Plexamp!
 
-## 🧰 What You Need
+## 🧰 What You Need / Requirements
 - Raspberry Pi - Any model with GPIO and Internet access, I would suggest that a Raspberry Pi 4 Model B or faster is used if you are planning on using Plexamp to scroll through and browse your artist and album collections, it does work but it can be quite slow to scroll and respond, the Now Playing and NFC playback feature are fine, but there is sometimes a delay of a few seconds
 - PN532 NFC HAT - In I2C mode - The one that is tested and working is available from [here](https://thepihut.com/products/nfc-hat-for-raspberry-pi-pn532) and documentation is [here](https://www.waveshare.com/wiki/PN532_NFC_HAT)
 - Chromium browser (preinstalled on Raspberry Pi OS)
 - A Plex Pass account so you can use Plexamp Headless
+- Python 3.9+ and pip
+- Internet access to install dependencies
+
+## Credits
+
+- [Adafruit](https://www.adafruit.com/) for the `adafruit-circuitpython-pn532` library
+- [Plex](https://www.plex.tv/) for Plexamp and Plexamp Headless
+- [Waveshare](https://www.waveshare.com/) for the PN532 hardware
+- Inspiration from [tgp-2's Plexamp setup gist](https://gist.github.com/tgp-2/fc34c5389bc3e4ef332e28d9430b0ebf)
 
 ## 📦 Installation (Step-by-step)
 
