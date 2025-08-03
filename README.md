@@ -18,7 +18,7 @@ Perfect for kiosks, jukeboxes, man caves, or DIY smart audio stations. Tap an NF
   The NFC tap-to-play and Now Playing screen are fast, but general Plexamp UI can lag on slower models.
 - PN532 NFC HAT – In I2C mode. The tested working version is available [here](https://thepihut.com/products/nfc-hat-for-raspberry-pi-pn532)  
   with documentation [here](https://www.waveshare.com/wiki/PN532_NFC_HAT)
-- Chromium browser (preinstalled on Raspberry Pi OS)
+- Chromium browser (usually preinstalled on Raspberry Pi OS)
 - A Plex Pass account to use Plexamp Headless
 - Python 3.9+ and pip
 - Internet access to install dependencies
@@ -40,10 +40,11 @@ Perfect for kiosks, jukeboxes, man caves, or DIY smart audio stations. Tap an NF
 
 ## 🔧 Quick Setup (Optional `setup.sh` Script)
 
-Once the hardware is setup with a fresh install of Raspberry Pi OS, and for most cleanish Raspberry Pi setups, you can use the provided [`setup.sh`](./setup.sh) script to automate the entire installation process.  
+Once the hardware is setup with a fresh install of Raspberry Pi OS, and for most clean Raspberry Pi setups, you can use tgp-2's Plexamp Headless setup script and then run the provided [`setup.sh`](./setup.sh) script to automate the remaining installation.  
+
 This is especially helpful for fresh installs or if you want to get up and running quickly.
 
-### 🛠️ What the script does
+### 🛠️ What the quick setup script does
 
 The `setup.sh` script performs the following actions:
 
@@ -53,7 +54,7 @@ The `setup.sh` script performs the following actions:
   - `git`, `i2c-tools`
   - `chromium-browser`
 - 🔧 Enables I2C via `raspi-config` (non-interactively)
-- 🔐 Enables SSH to allow remote access
+- 🔐 Enables SSH via `raspi-config` to allow remote access
 - 📂 Clones this GitHub repo to `~/Plexamp-NFC-Listener` (if not already cloned)
 - 📦 Installs Python dependencies from `requirements.txt`
 - 🧩 Copies and enables the `nfc-listener.service` systemd unit so it runs at boot
@@ -62,16 +63,41 @@ The `setup.sh` script performs the following actions:
 📢 If you're installing remotely via SSH, you will need to complete the Plexamp login by visiting:  
 `http://localhost:32500` from the Chromium on your Raspberry Pi.
 
-### 🚀 To run the automated setup:
+## 🚀 To run the automated and quick setup:
+
+### 1. Install Plexamp Headless (Required First Step)
+
+Use the official community installer (requires interactive input):
+
+```bash
+wget https://gist.githubusercontent.com/tgp-2/65e6f2f637bc81df2c9fd9ba33f73bc6/raw/plexamp-install.sh
+bash ./plexamp-install.sh
+```
+- Paste the claim code from https://plex.tv/claim
+- Enter a unique name for your Plexamp player
+- After installation, reboot:
+
+```bash
+sudo reboot
+```
+
+- After reboot, open `http://localhost:32500` in Chromium on the Raspberry Pi to complete the Plexamp login and configuration.
+
+### 2. Run the Plexamp NFC Listener setup script
+
+Download and run the setup.sh script:
 
 ```bash
 wget https://raw.githubusercontent.com/AndyBettger/Plexamp-NFC-Listener/main/setup.sh
 bash setup.sh
+sudo reboot
 ```
 
 ---
 
 ## 📦 Full Manual Installation (Step-by-step)
+
+Use this method if you are not comfortable running the setup script or if you have issues running it.
 
 ### 1. Hardware Setup
 
@@ -95,25 +121,7 @@ sudo reboot
 sudo apt update && sudo apt upgrade -y
 ```
 
-### 4. Install Required Packages
-
-```bash
-sudo apt install -y python3 python3-pip python3-venv chromium-browser git i2c-tools
-```
-
-### 5. Set Up Python Virtual Environment
-
-```bash
-cd ~
-git clone https://github.com/AndyBettger/Plexamp-NFC-Listener.git
-cd Plexamp-NFC-Listener
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 6. Install Plexamp Headless
+### 4. Install Plexamp Headless
 
 Use the installer provided by tgp-2:
 
@@ -129,7 +137,25 @@ bash ./plexamp-install.sh
 sudo reboot
 ```
 
-- After reboot, open `http://localhost:32500` in a Chromium on the Raspberry Pi to complete Plex login and config
+- After reboot, open `http://localhost:32500` in Chromium on the Raspberry Pi to complete the Plexamp login and configuration.
+
+### 5. Install Required Packages
+
+```bash
+sudo apt install -y python3 python3-pip python3-venv chromium-browser git i2c-tools
+```
+
+### 6. Set Up Python Virtual Environment
+
+```bash
+cd ~
+git clone https://github.com/AndyBettger/Plexamp-NFC-Listener.git
+cd Plexamp-NFC-Listener
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
 ### 7. Autostart Plexamp UI (Kiosk Mode)
 

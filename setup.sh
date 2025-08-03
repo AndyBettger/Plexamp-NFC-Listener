@@ -25,10 +25,6 @@ echo "📦 Installing Python dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "🎵 Installing Plexamp Headless from tgp-2's installer..."
-wget https://gist.githubusercontent.com/tgp-2/65e6f2f637bc81df2c9fd9ba33f73bc6/raw/79dfa75db81be185bcc84faa54b38604b185a619/plexamp-install.sh -O plexamp-install.sh
-bash plexamp-install.sh
-
 echo "📄 Installing and enabling systemd service..."
 sudo cp nfc-listener.service /etc/systemd/system/nfc-listener.service
 sudo systemctl daemon-reexec
