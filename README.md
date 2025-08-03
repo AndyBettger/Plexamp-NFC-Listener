@@ -170,7 +170,7 @@ Paste:
 [Desktop Entry]
 Type=Application
 Name=Plexamp Kiosk
-Exec=chromium-browser --kiosk --noerrdialogs --disable-infobars http://localhost:32500
+Exec=bash -c 'sleep 10 && chromium-browser --kiosk --start-maximized --noerrdialogs --disable-infobars http://localhost:32500'
 X-GNOME-Autostart-enabled=true
 ```
 
