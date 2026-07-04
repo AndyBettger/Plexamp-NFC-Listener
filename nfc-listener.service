@@ -1,13 +1,16 @@
 [Unit]
 Description=Plexamp NFC Listener
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-ExecStart=/home/andy/Plexamp-NFC-Listener/venv/bin/python /home/andy/Plexamp-NFC-Listener/nfc_listener.py
-WorkingDirectory=/home/andy/Plexamp-NFC-Listener
-Restart=always
+Type=simple
 User=andy
-Group=andy
+WorkingDirectory=/home/andy/Plexamp-NFC-Listener
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/andy/Plexamp-NFC-Listener/venv/bin/python -u /home/andy/Plexamp-NFC-Listener/nfc_listener.py
+Restart=on-failure
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
