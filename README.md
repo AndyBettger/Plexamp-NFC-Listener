@@ -70,6 +70,9 @@ The `setup.sh` script performs the following actions:
   - Current Raspberry Pi OS releases use `~/.config/labwc/autostart`
   - Older X11/LXDE releases use `~/.config/autostart/kiosk.desktop`
 - 🍏 Optionally installs Shairport Sync as an AirPlay receiver
+  - Lists available ALSA playback devices and asks which one to use for AirPlay audio
+  - Recommends the likely DAC HAT automatically, such as `plughw:CARD=Pro,DEV=0` for the Raspberry Pi DAC Pro
+  - Allows `AIRPLAY_OUTPUT_DEVICE` to override the interactive selection for unattended installs
   - When AirPlay playback begins, Plexamp is paused and `plexamp.service` is stopped so it releases the audio device
   - When AirPlay playback ends, `plexamp.service` is started again
   - A restricted sudoers rule allows the `shairport-sync` user to start/stop only `plexamp.service`
@@ -108,7 +111,9 @@ bash setup.sh
 sudo reboot
 ```
 
-The installer asks whether to install AirPlay support. To run non-interactively with AirPlay enabled:
+The installer asks whether to install AirPlay support. If enabled during an interactive run, it also lists the detected ALSA playback devices and asks which one Shairport Sync should use. Pressing Enter accepts the recommended device.
+
+To run non-interactively with AirPlay enabled:
 
 ```bash
 INSTALL_AIRPLAY=yes AIRPLAY_NAME="Plexamp Bedroom" bash setup.sh
@@ -118,7 +123,7 @@ sudo reboot
 You can also override the ALSA output device used by Shairport Sync:
 
 ```bash
-INSTALL_AIRPLAY=yes AIRPLAY_NAME="Plexamp Bedroom" AIRPLAY_OUTPUT_DEVICE="default" bash setup.sh
+INSTALL_AIRPLAY=yes AIRPLAY_NAME="Plexamp Bedroom" AIRPLAY_OUTPUT_DEVICE="plughw:CARD=Pro,DEV=0" bash setup.sh
 ```
 
 ---
@@ -144,6 +149,24 @@ Start plexamp.service again
 ```
 
 This avoids the common problem where AirPlay appears to connect but no audio plays because Plexamp still has hold of the DAC/audio output.
+
+### Choosing the AirPlay audio output
+
+On Raspberry Pi systems with HDMI plus an audio HAT, the ALSA `default` device may point to HDMI rather than the DAC. During interactive setup, the script lists the detected playback devices and lets you choose one by number.
+
+For example, a Raspberry Pi with a DAC Pro may show something like:
+
+```text
+1) plughw:CARD=vc4hdmi0,DEV=0 — vc4-hdmi-0 - MAI PCM i2s-hifi-0
+2) plughw:CARD=vc4hdmi1,DEV=0 — vc4-hdmi-1 - MAI PCM i2s-hifi-0
+3) plughw:CARD=Pro,DEV=0 — RPi DAC Pro - Raspberry Pi DAC Pro HiFi pcm512x-hifi-0  ← recommended
+4) default — Default ALSA device
+C) Custom ALSA device string
+```
+
+For a Raspberry Pi DAC Pro, choose the `plughw:CARD=Pro,DEV=0` option. The `plughw` form is preferred because it targets the actual hardware device while still allowing ALSA to handle useful software conversion.
+
+For non-interactive installs, the script automatically recommends `plughw:CARD=Pro,DEV=0` when it is present, then falls back to the first non-HDMI `plughw` device, then finally to `default`.
 
 The setup script creates these helper scripts:
 
@@ -291,7 +314,20 @@ If your OS only provides the old command name, replace `chromium` with `chromium
 ### 9. Optional: Install AirPlay Receiver
 
 ```bash
-sudo apt install -y shairport-sync avahi-daemon curl sudo
+sudo apt install -y shairport-sync avahi-daemon alsa-utils curl sudo
+```
+
+List available playback devices:
+
+```bash
+aplay -l
+aplay -L
+```
+
+Choose the ALSA output device that points to your DAC or audio HAT. For example, the Raspberry Pi DAC Pro is commonly:
+
+```text
+plughw:CARD=Pro,DEV=0
 ```
 
 Create the AirPlay start hook:
@@ -349,10 +385,12 @@ sessioncontrol = {
 };
 
 alsa = {
-  output_device = "default";
+  output_device = "plughw:CARD=Pro,DEV=0";
 };
 EOF
 ```
+
+Replace `plughw:CARD=Pro,DEV=0` with the device chosen from `aplay -L` if your DAC uses a different ALSA name.
 
 Enable and restart the services:
 
@@ -461,6 +499,28 @@ Make sure the phone, Mac, or iPad is on the same network/VLAN as the Pi, and tha
 
 ### AirPlay connects but no sound plays
 
+First confirm the selected ALSA device points to the real audio output, not HDMI:
+
+```bash
+aplay -l
+aplay -L
+cat /etc/shairport-sync.conf | grep -A3 '^alsa'
+```
+
+On a Raspberry Pi DAC Pro, the Shairport Sync output should usually be:
+
+```text
+plughw:CARD=Pro,DEV=0
+```
+
+You can test the DAC directly with:
+
+```bash
+sudo systemctl stop shairport-sync
+sudo systemctl stop plexamp.service
+speaker-test -D plughw:CARD=Pro,DEV=0 -c 2 -t wav
+```
+
 Check that Plexamp is being stopped when AirPlay begins:
 
 ```bash
@@ -477,10 +537,10 @@ systemctl status plexamp.service
 systemctl status plexamp.service
 ```
 
-If the DAC uses a non-default ALSA device, rerun setup with:
+If the DAC uses a different ALSA device, rerun setup interactively and select the correct output, or force it with:
 
 ```bash
-INSTALL_AIRPLAY=yes AIRPLAY_OUTPUT_DEVICE="hw:1,0" bash setup.sh
+INSTALL_AIRPLAY=yes AIRPLAY_OUTPUT_DEVICE="plughw:CARD=Pro,DEV=0" bash setup.sh
 ```
 
 ---
