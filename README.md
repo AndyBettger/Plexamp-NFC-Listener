@@ -7,6 +7,7 @@ Each NFC tag contains a pre-encoded Plexamp playback URL which is resolved and s
 - Uses Adafruit's CircuitPython PN532 and Blinka libraries
 - Compatible with Plexamp Headless running on `http://localhost:32500`
 - Full startup automation with systemd and Chromium kiosk mode
+- Optional AirPlay receiver setup using Shairport Sync, with Plexamp handover hooks
 - Tested on current Raspberry Pi OS releases using Python 3.13, where `python3-lgpio` and a venv created with `--system-site-packages` are required
 
 ## Use Case
@@ -23,12 +24,14 @@ Perfect for kiosks, jukeboxes, man caves, or DIY smart audio stations. Tap an NF
 - A Plex Pass account to use Plexamp Headless
 - Python 3.9+ and pip
 - Internet access to install dependencies
+- Optional: Shairport Sync and Avahi for AirPlay receiver support
 
 ## Credits
 
 - [Adafruit](https://www.adafruit.com/) for the `adafruit-circuitpython-pn532` library  
 - [Plex](https://www.plex.tv/) for Plexamp and Plexamp Headless  
 - [Waveshare](https://www.waveshare.com/) for the PN532 hardware  
+- [Shairport Sync](https://github.com/mikebrady/shairport-sync) for AirPlay audio receiver support
 - Inspiration from [tgp-2's Plexamp setup gist](https://gist.github.com/tgp-2/fc34c5389bc3e4ef332e28d9430b0ebf)
 
 ---
@@ -53,7 +56,7 @@ The `setup.sh` script performs the following actions:
 - 💾 Installs required packages:
   - `python3`, `python3-pip`, `python3-venv`
   - `python3-lgpio`
-  - `git`, `i2c-tools`
+  - `git`, `i2c-tools`, `curl`
   - `chromium` or `chromium-browser`, depending on the Raspberry Pi OS release
 - 🔧 Enables I2C via `raspi-config` (non-interactively)
 - 🔐 Enables SSH via `raspi-config` to allow remote access
@@ -66,6 +69,10 @@ The `setup.sh` script performs the following actions:
 - 🌐 Configures Chromium to open `http://localhost:32500` in full-screen kiosk mode on startup
   - Current Raspberry Pi OS releases use `~/.config/labwc/autostart`
   - Older X11/LXDE releases use `~/.config/autostart/kiosk.desktop`
+- 🍏 Optionally installs Shairport Sync as an AirPlay receiver
+  - When AirPlay playback begins, Plexamp is paused and `plexamp.service` is stopped so it releases the audio device
+  - When AirPlay playback ends, `plexamp.service` is started again
+  - A restricted sudoers rule allows the `shairport-sync` user to start/stop only `plexamp.service`
 
 📢 If you're installing remotely via SSH, you will need to complete the Plexamp login by visiting:  
 `http://localhost:32500` from Chromium on your Raspberry Pi.
@@ -100,6 +107,58 @@ wget https://raw.githubusercontent.com/AndyBettger/Plexamp-NFC-Listener/main/set
 bash setup.sh
 sudo reboot
 ```
+
+The installer asks whether to install AirPlay support. To run non-interactively with AirPlay enabled:
+
+```bash
+INSTALL_AIRPLAY=yes AIRPLAY_NAME="Plexamp Bedroom" bash setup.sh
+sudo reboot
+```
+
+You can also override the ALSA output device used by Shairport Sync:
+
+```bash
+INSTALL_AIRPLAY=yes AIRPLAY_NAME="Plexamp Bedroom" AIRPLAY_OUTPUT_DEVICE="default" bash setup.sh
+```
+
+---
+
+## 🍏 Optional AirPlay Receiver
+
+AirPlay support is provided by Shairport Sync. Because Plexamp Headless and Shairport Sync can both want the same audio device, this project uses handover hooks instead of letting both services fight for the output.
+
+The handover flow is:
+
+```text
+AirPlay starts
+  ↓
+Pause Plexamp via http://localhost:32500/player/playback/pause
+  ↓
+Stop plexamp.service so the audio device is released
+  ↓
+Shairport Sync plays the AirPlay stream
+  ↓
+AirPlay ends
+  ↓
+Start plexamp.service again
+```
+
+This avoids the common problem where AirPlay appears to connect but no audio plays because Plexamp still has hold of the DAC/audio output.
+
+The setup script creates these helper scripts:
+
+```text
+/usr/local/bin/plexamp-airplay-start
+/usr/local/bin/plexamp-airplay-stop
+```
+
+It also configures Shairport Sync session hooks in:
+
+```text
+/etc/shairport-sync.conf
+```
+
+and backs up any existing config first.
 
 ---
 
@@ -152,7 +211,7 @@ sudo reboot
 ### 5. Install Required Packages
 
 ```bash
-sudo apt install -y python3 python3-pip python3-venv python3-lgpio git i2c-tools
+sudo apt install -y python3 python3-pip python3-venv python3-lgpio git i2c-tools curl
 sudo apt install -y chromium || sudo apt install -y chromium-browser
 sudo usermod -aG i2c,gpio,spi "$USER"
 ```
@@ -229,7 +288,83 @@ X-GNOME-Autostart-enabled=true
 
 If your OS only provides the old command name, replace `chromium` with `chromium-browser`.
 
-### 9. Set Up Service to Run at Boot
+### 9. Optional: Install AirPlay Receiver
+
+```bash
+sudo apt install -y shairport-sync avahi-daemon curl sudo
+```
+
+Create the AirPlay start hook:
+
+```bash
+sudo tee /usr/local/bin/plexamp-airplay-start >/dev/null <<'EOF'
+#!/bin/bash
+set -euo pipefail
+curl --silent --fail --max-time 2 "http://localhost:32500/player/playback/pause" >/dev/null 2>&1 || true
+sleep 1
+sudo systemctl stop plexamp.service >/dev/null 2>&1 || true
+EOF
+```
+
+Create the AirPlay stop hook:
+
+```bash
+sudo tee /usr/local/bin/plexamp-airplay-stop >/dev/null <<'EOF'
+#!/bin/bash
+set -euo pipefail
+sudo systemctl start plexamp.service >/dev/null 2>&1 || true
+EOF
+```
+
+Make both hooks executable:
+
+```bash
+sudo chmod +x /usr/local/bin/plexamp-airplay-start /usr/local/bin/plexamp-airplay-stop
+```
+
+Allow the `shairport-sync` user to start and stop only the Plexamp service:
+
+```bash
+SYSTEMCTL_CMD="$(command -v systemctl)"
+printf 'shairport-sync ALL=(root) NOPASSWD: %s stop plexamp.service, %s start plexamp.service\n' "$SYSTEMCTL_CMD" "$SYSTEMCTL_CMD" | sudo tee /etc/sudoers.d/shairport-sync-plexamp
+sudo chmod 0440 /etc/sudoers.d/shairport-sync-plexamp
+sudo visudo -cf /etc/sudoers.d/shairport-sync-plexamp
+```
+
+Back up and write the Shairport Sync config:
+
+```bash
+sudo cp /etc/shairport-sync.conf "/etc/shairport-sync.conf.backup.$(date +%Y%m%d-%H%M%S)"
+sudo tee /etc/shairport-sync.conf >/dev/null <<'EOF'
+general = {
+  name = "Plexamp Bedroom";
+  output_backend = "alsa";
+};
+
+sessioncontrol = {
+  run_this_before_play_begins = "/usr/local/bin/plexamp-airplay-start";
+  run_this_after_play_ends = "/usr/local/bin/plexamp-airplay-stop";
+  active_state_timeout = 10.0;
+  wait_for_completion = "yes";
+};
+
+alsa = {
+  output_device = "default";
+};
+EOF
+```
+
+Enable and restart the services:
+
+```bash
+sudo systemctl enable avahi-daemon
+sudo systemctl restart avahi-daemon
+sudo systemctl enable shairport-sync
+sudo systemctl restart shairport-sync
+sudo systemctl start plexamp.service
+```
+
+### 10. Set Up NFC Listener Service to Run at Boot
 
 ```bash
 sudo cp nfc-listener.service /etc/systemd/system/nfc-listener.service
@@ -310,6 +445,42 @@ For older releases, check:
 ```bash
 cat ~/.config/autostart/kiosk.desktop
 command -v chromium-browser
+```
+
+### AirPlay device does not appear
+
+Check Shairport Sync and Avahi:
+
+```bash
+systemctl status shairport-sync
+systemctl status avahi-daemon
+journalctl -u shairport-sync -b -n 100 --no-pager
+```
+
+Make sure the phone, Mac, or iPad is on the same network/VLAN as the Pi, and that mDNS/Bonjour traffic is not blocked.
+
+### AirPlay connects but no sound plays
+
+Check that Plexamp is being stopped when AirPlay begins:
+
+```bash
+journalctl -u shairport-sync -b -n 100 --no-pager
+systemctl status plexamp.service
+```
+
+You can manually test the hooks:
+
+```bash
+/usr/local/bin/plexamp-airplay-start
+systemctl status plexamp.service
+/usr/local/bin/plexamp-airplay-stop
+systemctl status plexamp.service
+```
+
+If the DAC uses a non-default ALSA device, rerun setup with:
+
+```bash
+INSTALL_AIRPLAY=yes AIRPLAY_OUTPUT_DEVICE="hw:1,0" bash setup.sh
 ```
 
 ---
