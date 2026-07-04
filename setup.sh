@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_URL="https://github.com/AndyBettger/Plexamp-NFC-Listener.git"
 REPO_DIR="$HOME/Plexamp-NFC-Listener"
 PLEXAMP_URL="http://localhost:32500"
-AIRPLAY_OUTPUT_DEVICE="${AIRPLAY_OUTPUT_DEVICE:-default}"
+AIRPLAY_OUTPUT_DEVICE="${AIRPLAY_OUTPUT_DEVICE:-}"
 
 prompt_yes_no() {
   local prompt="$1"
@@ -26,6 +26,31 @@ prompt_yes_no() {
   esac
 }
 
+detect_airplay_output_device() {
+  if [ -n "${AIRPLAY_OUTPUT_DEVICE:-}" ]; then
+    echo "$AIRPLAY_OUTPUT_DEVICE"
+    return 0
+  fi
+
+  if command -v aplay >/dev/null 2>&1; then
+    # Prefer the Raspberry Pi DAC Pro / IQaudIO DAC Pro if present.
+    if aplay -L | grep -qx 'plughw:CARD=Pro,DEV=0'; then
+      echo 'plughw:CARD=Pro,DEV=0'
+      return 0
+    fi
+
+    # Otherwise prefer the first non-HDMI plughw device, which is usually the DAC HAT.
+    local non_hdmi_device
+    non_hdmi_device="$(aplay -L | awk '/^plughw:CARD=/ && $0 !~ /vc4hdmi/ { print; exit }')"
+    if [ -n "$non_hdmi_device" ]; then
+      echo "$non_hdmi_device"
+      return 0
+    fi
+  fi
+
+  echo 'default'
+}
+
 configure_airplay() {
   echo "🍏 Optional AirPlay receiver setup..."
 
@@ -35,11 +60,15 @@ configure_airplay() {
   fi
 
   echo "💾 Installing AirPlay packages..."
-  sudo apt install -y shairport-sync avahi-daemon curl sudo
+  sudo apt install -y shairport-sync avahi-daemon alsa-utils curl sudo
 
   local default_airplay_name
   local airplay_name_input=""
   local airplay_name
+  local detected_output_device
+  local output_device_input=""
+  local airplay_output_device
+
   default_airplay_name="$(hostname | sed 's/-/ /g')"
 
   if [ -n "${AIRPLAY_NAME:-}" ]; then
@@ -53,6 +82,17 @@ configure_airplay() {
 
   # Keep the Shairport Sync config simple and avoid breaking quoted strings.
   airplay_name="${airplay_name//\"/}"
+
+  detected_output_device="$(detect_airplay_output_device)"
+  if [ -z "${AIRPLAY_OUTPUT_DEVICE:-}" ] && [ -t 0 ]; then
+    echo "🎚️  Detected AirPlay ALSA output device: $detected_output_device"
+    read -r -p "AirPlay ALSA output device [$detected_output_device]: " output_device_input
+    airplay_output_device="${output_device_input:-$detected_output_device}"
+  else
+    airplay_output_device="$detected_output_device"
+  fi
+
+  echo "🎚️  Using AirPlay ALSA output device: $airplay_output_device"
 
   local systemctl_cmd
   systemctl_cmd="$(command -v systemctl)"
@@ -109,7 +149,7 @@ sessioncontrol = {
 };
 
 alsa = {
-  output_device = "$AIRPLAY_OUTPUT_DEVICE";
+  output_device = "$airplay_output_device";
 };
 EOF
 
