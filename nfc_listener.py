@@ -23,7 +23,7 @@ def switch_display_to_plexamp() -> None:
     """Ask A Clockwork Plex to show the embedded Plexamp page after an NFC scan."""
     if DISPLAY_SWITCH_COMMAND and os.path.exists(DISPLAY_SWITCH_COMMAND):
         try:
-            subprocess.run([DISPLAY_SWITCH_COMMAND], check=False, timeout=5)
+            subprocess.run(["/bin/bash", DISPLAY_SWITCH_COMMAND], check=False, timeout=5)
             print("🖥️ Dashboard switched to Plexamp mode.")
             return
         except Exception as exc:
