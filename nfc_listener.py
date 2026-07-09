@@ -1,9 +1,43 @@
+import os
+import subprocess
+import time
+import urllib.parse
+
 import board
 import busio
-from adafruit_pn532.i2c import PN532_I2C
-import urllib.parse
 import requests
-import time
+from adafruit_pn532.i2c import PN532_I2C
+
+
+DISPLAY_SWITCH_COMMAND = os.environ.get(
+    "PLEXAMP_DISPLAY_SWITCH_COMMAND",
+    "/home/andy/A-Clockwork-Plex/scripts/nfc-plexamp-mode.sh",
+)
+DASHBOARD_MODE_URL = os.environ.get(
+    "PLEXAMP_DASHBOARD_MODE_URL",
+    "http://localhost:8088/api/mode/plexamp",
+)
+
+
+def switch_display_to_plexamp() -> None:
+    """Ask A Clockwork Plex to show the embedded Plexamp page after an NFC scan."""
+    if DISPLAY_SWITCH_COMMAND and os.path.exists(DISPLAY_SWITCH_COMMAND):
+        try:
+            subprocess.run([DISPLAY_SWITCH_COMMAND], check=False, timeout=5)
+            print("🖥️ Dashboard switched to Plexamp mode.")
+            return
+        except Exception as exc:
+            print(f"⚠️ Display switch command failed: {exc}")
+
+    try:
+        response = requests.post(DASHBOARD_MODE_URL, timeout=3)
+        if response.ok:
+            print("🖥️ Dashboard Plexamp mode requested.")
+        else:
+            print(f"⚠️ Dashboard mode request failed: {response.status_code}")
+    except Exception as exc:
+        print(f"⚠️ Could not contact dashboard mode endpoint: {exc}")
+
 
 # Set up I2C bus and connect to the PN532 NFC module
 i2c = busio.I2C(board.SCL, board.SDA)
@@ -90,6 +124,7 @@ while True:
                     response = requests.get(local_url)
                     if response.ok:
                         print("✅ Playback triggered!")
+                        switch_display_to_plexamp()
                     else:
                         print(f"⚠️ Error triggering playback: {response.status_code}")
                 except Exception as e:
